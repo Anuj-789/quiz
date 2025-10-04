@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Aptitude Quizzes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #d0d8f8, #2587e9);
+    margin: 0; padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+  }
+  .container {
+    background: linear-gradient(135deg, #d5d5f5, #f8f8f8);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 900px;
+    text-align: center;
+  }
+  h1, h2 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  h1 {
+    margin-bottom: 80px;
+  }
+  .card {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 15px 0 30px 0;
+  }
+  button {
+    padding: 10px 20px;
+    background: #667eea;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
+    transition: 0.3s;
+  }
+  button:hover {
+    background: #764ba2;
+  }
+  .hidden {
+    display: none;
+  }
+  .question {
+    margin: 20px 0;
+    text-align: left;
+  }
+  .options {
+    text-align: left;
+    margin: 10px 0;
+  }
+  .options label {
+    display: block;
+    margin:  0;
+    cursor: pointer;
+  }
+  #timer {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #d9534f;
+    font-size: 18px;
+  }
+  #certificatePreview {
+    border: 2px solid #667eea;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<!-- Dashboard -->
+<div class="container" id="dashboard">
+  <h1>-:Aptitude Quizzes:-</h1>
+  <div class="card">
+    <h2>Quantitative Quiz</h2>
+    <p>Test your math & aptitude skills!</p>
+    <button onclick="startQuiz('quant')">Start Quiz</button>
+  </div>
+  <div class="card">
+    <h2>Logical Reasoning Quiz</h2>
+    <p>Test your reasoning and problem-solving skills!</p>
+    <button onclick="startQuiz('logical')">Start Quiz</button>
+  </div>
+  <div class="card">
+    <h2>Verbal Aptitude Quiz</h2>
+    <p>Test your grammar, vocabulary, and comprehension!</p>
+    <button onclick="startQuiz('verbal')">Start Quiz</button>
+  </div>
+  <div class="card">
+    <h2>Non-Verbal Aptitude Quiz</h2>
+    <p>Test your visual and spatial reasoning!</p>
+    <button onclick="startQuiz('nonverbal')">Start Quiz</button>
+  </div>
+  <div class="card">
+    <h2>Data Interpretation Quiz</h2>
+    <p>Analyze data and charts to answer questions!</p>
+    <button onclick="startQuiz('data')">Start Quiz</button>
+  </div>
+</div>
+
+<!-- Quiz Page -->
+<div class="container hidden" id="quizPage">
+  <h2 id="quizTitle">Quiz</h2>
+  <div id="timer">Time Left: 60s</div>
+  <div id="quizContent"></div>
+  <button id="nextBtn" onclick="nextQuestion()">Next</button>
+  <button id="submitBtn" class="hidden" onclick="submitQuiz()">Submit</button>
+</div>
+
+<!-- Result Page -->
+<div class="container hidden" id="resultPage">
+  <h2>Quiz Result</h2>
+  <p id="scoreText"></p>
+  <button onclick="backToDashboard()">Back to Dashboard</button>
+  <button onclick="replayQuiz()">Replay Quiz</button>
+  <button id="claimBtn" class="hidden" onclick="claimCertificate()">Claim Certificate</button>
+  <div id="certificatePreview" class="hidden">
+    <h3>🎓 Certificate Preview 🎓</h3>
+    <p id="certText"></p>
+    <button onclick="downloadCertificate()">Download Certificate</button>
+  </div>
+</div>
+
+<script>
+// Quiz Questions by Type
+const allQuizzes = {
+  quant: [
+    { q: "12 + 8 = ?", options:["18","20","22","24"], answer:1 },
+    { q: "Square root of 144?", options:["10","11","12","13"], answer:2 },
+    { q: "15% of 200?", options:["20","25","30","35"], answer:2 },
+    { q: "LCM of 4 and 6?", options:["8","10","12","14"], answer:2 },
+    { q: "25 × 25 = ?", options:["525","575","625","675"], answer:2 },
+    { q: "180 ÷ 12 = ?", options:["12","13","14","15"], answer:3 },
+    { q: "7² = ?", options:["47","48","49","50"], answer:2 },
+    { q: "Cube of 3?", options:["9","18","27","36"], answer:2 },
+    { q: "1000 ÷ 25?", options:["20","30","40","50"], answer:2 },
+    { q: "45 – 19 = ?", options:["25","26","27","28"], answer:2 }
+  ],
+  logical: [
+    { q:"If A>B and B>C, who is the greatest?", options:["A","B","C","Cannot say"], answer:0 },
+    { q:"Find the odd one out: 2, 3, 5, 9", options:["2","3","5","9"], answer:3 },
+    { q:"Next number: 2, 4, 8, 16, ?", options:["20","24","32","36"], answer:2 },
+    { q:"All squares are rectangles. True or False?", options:["True","False","Cannot say","None"], answer:0 },
+    { q:"Complete the series: 1,4,9,16,?", options:["20","25","30","36"], answer:1 },
+    { q:"If today is Monday, day after 50 days?", options:["Monday","Wednesday","Saturday","Thursday"], answer:2 },
+    { q:"Mirror image of 123?", options:["321","123","None","132"], answer:0 },
+    { q:"Find missing letter: A, C, E, ?", options:["F","G","H","I"], answer:2 },
+    { q:"Logical opposite of 'Hot'?", options:["Cold","Warm","Cool","None"], answer:0 },
+    { q:"Which shape completes the pattern?", options:["Circle","Square","Triangle","Rectangle"], answer:2 }
+  ],
+  verbal: [
+    { q:"Synonym of 'Happy'?", options:["Sad","Joyful","Angry","Tired"], answer:1 },
+    { q:"Antonym of 'Quick'?", options:["Fast","Slow","Rapid","Swift"], answer:1 },
+    { q:"Fill in: She ___ to school.", options:["go","goes","gone","going"], answer:1 },
+    { q:"Choose correct spelling:", options:["Recieve","Receive","Recive","Receeve"], answer:1 },
+    { q:"Plural of 'Child'?", options:["Childs","Children","Childes","Childen"], answer:1 },
+    { q:"Synonym of 'Smart'?", options:["Intelligent","Dull","Slow","Weak"], answer:0 },
+    { q:"Opposite of 'Success'?", options:["Failure","Luck","Win","Lose"], answer:0 },
+    { q:"He is the best ___ the class.", options:["in","on","at","for"], answer:0 },
+    { q:"Choose correct verb: I ___ a book.", options:["read","reads","reading","reed"], answer:0 },
+    { q:"Synonym of 'Beautiful'?", options:["Ugly","Pretty","Bad","Good"], answer:1 }
+  ],
+  nonverbal: [
+    { q:"Find missing figure in a pattern.", options:["A","B","C","D"], answer:1 },
+    { q:"Next in sequence: ▲, ■, ▲, ■, ?", options:["▲","■","●","◆"], answer:0 },
+    { q:"Which is odd shape?", options:["Circle","Square","Triangle","Square"], answer:0 },
+    { q:"Identify the reflection of the shape", options:["Option1","Option2","Option3","Option4"], answer:1 },
+    { q:"Complete the pattern: ○ △ ○ △ ?", options:["○","△","□","◇"], answer:0 },
+    { q:"Which shape fits?", options:["A","B","C","D"], answer:2 },
+    { q:"Find identical figure", options:["1","2","3","4"], answer:3 },
+    { q:"Next shape in series?", options:["▲","■","●","◆"], answer:1 },
+    { q:"Odd one out in shapes?", options:["▲","■","■","●"], answer:3 },
+    { q:"Rotate shape 90°, which matches?", options:["A","B","C","D"], answer:0 }
+  ],
+  data: [
+    { q:"Bar chart shows sales: Jan 100, Feb 150. Highest month?", options:["Jan","Feb","Equal","None"], answer:1 },
+    { q:"If total sales = 200, Jan=100, Feb=? ", options:["50","100","150","200"], answer:1 },
+    { q:"Pie chart 25% of 360° = ?", options:["45","60","90","120"], answer:2 },
+    { q:"Average of 10,20,30?", options:["15","20","25","30"], answer:2 },
+    { q:"Sum of 5+10+15?", options:["25","30","35","40"], answer:3 },
+    { q:"Max value in dataset [5,7,12,9]?", options:["5","7","12","9"], answer:2 },
+    { q:"Min value in dataset [4,6,2,8]?", options:["2","4","6","8"], answer:0 },
+    { q:"Mean of 2,4,6,8?", options:["4","5","6","7"], answer:1 },
+    { q:"If total=500, 20% = ?", options:["50","80","100","120"], answer:2 },
+    { q:"Find range: [5,10,15,20]", options:["5","10","15","20"], answer:3 }
+  ]
+};
+
+let score = 0;
+let currentQ = 0;
+let answers = [];
+let timer;
+let timeLeft = 60;
+let currentQuiz = 'quant';
+
+function startQuiz(type) {
+  currentQuiz = type;
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("quizPage").classList.remove("hidden");
+  currentQ = 0;
+  answers = [];
+  loadQuestion();
+  startTimer();
+  document.getElementById("quizTitle").innerText = getQuizTitle(type);
+}
+
+function getQuizTitle(type){
+  switch(type){
+    case 'quant': return 'Quantitative Quiz';
+    case 'logical': return 'Logical Reasoning Quiz';
+    case 'verbal': return 'Verbal Aptitude Quiz';
+    case 'nonverbal': return 'Non-Verbal Aptitude Quiz';
+    case 'data': return 'Data Interpretation Quiz';
+    default: return 'Quiz';
+  }
+}
+
+function loadQuestion() {
+  const quiz = allQuizzes[currentQuiz];
+  const q = quiz[currentQ];
+  const container = document.getElementById("quizContent");
+  container.innerHTML = `<div class="question"><b>Q${currentQ + 1}.</b> ${q.q}</div>`;
+  let optionsHTML = '<div class="options">';
+  q.options.forEach((opt, i) => {
+    optionsHTML += `<label><input type="radio" name="option" value="${i}"> ${opt}</label>`;
+  });
+  optionsHTML += '</div>';
+  container.innerHTML += optionsHTML;
+
+  document.getElementById("nextBtn").style.display = (currentQ === allQuizzes[currentQuiz].length - 1) ? "none" : "inline-block";
+  document.getElementById("submitBtn").style.display = (currentQ === allQuizzes[currentQuiz].length - 1) ? "inline-block" : "none";
+}
+
+function nextQuestion() {
+  const selected = document.querySelector('input[name="option"]:checked');
+  if (!selected) {
+    alert("Please select an option!");
+    return;
+  }
+  answers[currentQ] = parseInt(selected.value);
+  currentQ++;
+  loadQuestion();
+}
+
+function submitQuiz() {
+  const selected = document.querySelector('input[name="option"]:checked');
+  if (!selected) {
+    alert("Please select an option!");
+    return;
+  }
+  answers[currentQ] = parseInt(selected.value);
+  clearInterval(timer);
+
+  // Calculate score
+  score = 0;
+  const quiz = allQuizzes[currentQuiz];
+  for(let i=0; i<quiz.length; i++) {
+    if (answers[i] === quiz[i].answer) score++;
+  }
+
+  // Show result page
+  document.getElementById("quizPage").classList.add("hidden");
+  document.getElementById("resultPage").classList.remove("hidden");
+  document.getElementById("scoreText").innerText = `You scored ${score} out of ${quiz.length} in ${getQuizTitle(currentQuiz)}.`;
+
+  // Show claim certificate button only if score >= 5
+  document.getElementById("claimBtn").style.display = (score >= 5) ? "inline-block" : "none";
+  document.getElementById("certificatePreview").classList.add("hidden");
+}
+
+function backToDashboard() {
+  document.getElementById("resultPage").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+}
+
+function replayQuiz() {
+  document.getElementById("resultPage").classList.add("hidden");
+  startQuiz(currentQuiz);
+}
+
+function startTimer() {
+  timeLeft = 60;
+  document.getElementById("timer").innerText = `Time Left: ${timeLeft}s`;
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").innerText = `Time Left: ${timeLeft}s`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      alert("Time is up! Submitting quiz...");
+      submitQuiz();
+    }
+  }, 1000);
+}
+
+// Variables for certificate name
+let certificateName = "Student";
+
+function claimCertificate() {
+  const name = prompt("Enter your name for the certificate:", "Student");
+  if (name && name.trim() !== "") {
+    certificateName = name.trim();
+  } else {
+    certificateName = "Student";
+  }
+
+  document.getElementById("certificatePreview").classList.remove("hidden");
+  document.getElementById("certText").innerText = `Congratulations, ${certificateName}! You scored ${score} out of ${allQuizzes[currentQuiz].length} in ${getQuizTitle(currentQuiz)}.`;
+}
+
+function downloadCertificate() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  const gold = "#D4AF37";
+  const darkBlue = "#1A237E";
+  const black = "#000000";
+  const lightYellow = "#FFF9E3";
+
+  doc.setFillColor(lightYellow);
+  doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+  doc.setDrawColor(gold);
+  doc.setLineWidth(4);
+  doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+  doc.setLineWidth(1.5);
+  doc.rect(15, 15, pageWidth - 30, pageHeight - 30);
+
+  const medalUrl = "https://static.vecteezy.com/system/resources/previews/002/316/278/original/gold-badge-illustration-vector.jpg";
+  const imgWidth = 40;
+  const imgHeight = 40;
+  const imgX = (pageWidth - imgWidth) / 2;
+  const imgY = 20;
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+
+  img.onload = function() {
+    doc.addImage(img, 'JPEG', imgX, imgY, imgWidth, imgHeight);
+
+    doc.setTextColor(darkBlue);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(30);
+    doc.text("Certificate of Achievement", pageWidth / 2, imgY + imgHeight + 20, null, null, "center");
+
+    doc.setDrawColor(gold);
+    doc.setLineWidth(2);
+    doc.line(pageWidth / 2 - 60, imgY + imgHeight + 25, pageWidth / 2 + 60, imgY + imgHeight + 25);
+
+    doc.setTextColor(black);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "normal");
+    doc.text("This is proudly presented to", pageWidth / 2, imgY + imgHeight + 50, null, null, "center");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(darkBlue);
+    doc.text(certificateName, pageWidth / 2, imgY + imgHeight + 70, null, null, "center");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.setTextColor(black);
+    doc.text(`for scoring ${score} out of ${allQuizzes[currentQuiz].length} in ${getQuizTitle(currentQuiz)}.`, pageWidth / 2, imgY + imgHeight + 90, null, null, "center");
+
+    doc.setFontSize(14);
+    doc.text("Congratulations on your success!", pageWidth / 2, imgY + imgHeight + 110, null, null, "center");
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    doc.setFontSize(12);
+    doc.text(`Date: ${dateStr}`, pageWidth - 30, pageHeight - 40, null, null, "right");
+
+    doc.setDrawColor(gold);
+    doc.setLineWidth(1);
+    doc.line(15, pageHeight - 50, 60, pageHeight - 50);
+    doc.line(pageWidth - 60, pageHeight - 50, pageWidth - 15, pageHeight - 50);
+
+    doc.save("Certificate.pdf");
+  };
+
+  img.onerror = function() {
+    console.warn("Medal image failed to load, generating certificate without it.");
+
+    doc.setTextColor(darkBlue);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(30);
+    doc.text("Certificate of Achievement", pageWidth / 2, 60, null, null, "center");
+
+    doc.setDrawColor(gold);
+    doc.setLineWidth(2);
+    doc.line(pageWidth / 2 - 60, 65, pageWidth / 2 + 60, 65);
+
+    doc.setTextColor(black);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "normal");
+    doc.text("This is proudly presented to", pageWidth / 2, 85, null, null, "center");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.setTextColor(darkBlue);
+    doc.text(certificateName, pageWidth / 2, 105, null, null, "center");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(16);
+    doc.setTextColor(black);
+    doc.text(`for scoring ${score} out of ${allQuizzes[currentQuiz].length} in ${getQuizTitle(currentQuiz)}.`, pageWidth / 2, 125, null, null, "center");
+
+    doc.setFontSize(14);
+    doc.text("Congratulations on your success!", pageWidth / 2, 145, null, null, "center");
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    doc.setFontSize(12);
+    doc.text(`Date: ${dateStr}`, pageWidth - 30, pageHeight - 40, null, null, "right");
+
+    doc.setDrawColor(gold);
+    doc.setLineWidth(1);
+    doc.line(15, pageHeight - 50, 60, pageHeight - 50);
+    doc.line(pageWidth - 60, pageHeight - 50, pageWidth - 15, pageHeight - 50);
+
+    doc.save("Certificate.pdf");
+  };
+
+  img.src = medalUrl;
+}
+</script>
+</body>
+</html>
